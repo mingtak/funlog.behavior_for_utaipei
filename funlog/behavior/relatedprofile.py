@@ -14,7 +14,7 @@ from zope.schema.interfaces import IContextSourceBinder
 
 from funlog.behavior import MessageFactory as _
 
-from funlog.content.profile import IProfile
+#from funlog.content.profile import IProfile
 
 
 @grok.provider(IContextSourceBinder)
