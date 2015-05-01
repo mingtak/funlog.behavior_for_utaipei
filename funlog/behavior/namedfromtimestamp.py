@@ -5,7 +5,7 @@ from plone.autoform.interfaces import IFormFieldProvider
 from plone.dexterity.interfaces import IDexterityContent
 from plone.supermodel import model
 from zope import schema
-from plone.directives import form
+from plone.directives import form, dexterity
 from zope.component import adapts
 from zope.interface import alsoProvides, implements, Invalid, Interface
 from zope.lifecycleevent.interfaces import IObjectModifiedEvent
@@ -33,6 +33,9 @@ class INamedFromTimeStamp(INameFromTitle):
             fields=['contentUrl', 'title']
         )
 
+    dexterity.write_permission(contentUrl='cmf.ManagePortal')
+    dexterity.read_permission(contentUrl='cmf.ManagePortal')
+    form.omitted('contentUrl')
     contentUrl = schema.TextLine(
         title=_(u'Content url'),
         description=_(u'help_contentUrl',
@@ -74,7 +77,7 @@ class NamedFromTimeStamp(object):
     @property
     def title(self):
         context = self.context
-        if context.contentUrl is not None:
+        if hasattr(context, 'contentUrl') and context.contentUrl is not None:
             return context.contentUrl
         timeString = DateTime().strftime("%Y%m%d%H%M")
         return timeString
@@ -87,12 +90,14 @@ def object_edited(context, event):
     if not hasattr(context, 'contentUrl'):
         return
     if context.contentUrl is None:
-        urlString = str(DateTime().strftime("%Y%m%d%H%M"))
+        if not context.getId().isdigit():
+            urlString = str(DateTime().strftime("%Y%m%d%H%M"))
     elif context.getId() != context.contentUrl:
         urlString = context.contentUrl
     else:
         return
-    try:
-        api.content.rename(obj=context, new_id=str(urlString))
-    except:
-        pass
+    if locals().has_key('urlString') and (context.getId() != urlString):
+        try:
+            api.content.rename(obj=context, new_id=str(urlString))
+        except:
+            pass
